@@ -2,7 +2,6 @@
  * this file ported from FFMPEG
 */
 
-
 template<typename T>
 __inline__ __device__ T spatial_predictor(T a, T b, T c, T d, T e, T f, T g,
                                           T h, T i, T j, T k, T l, T m, T n)
