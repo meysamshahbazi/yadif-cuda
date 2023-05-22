@@ -101,13 +101,13 @@ __inline__ __device__ void yadif_single(T *dst,
     }
 
     // Calculate spatial prediction
-    T a = tex2D<T>(cur, xo - 3, yo - 1);
-    T b = tex2D<T>(cur, xo - 2, yo - 1);
-    T c = tex2D<T>(cur, xo - 1, yo - 1);
-    T d = tex2D<T>(cur, xo - 0, yo - 1);
-    T e = tex2D<T>(cur, xo + 1, yo - 1);
-    T f = tex2D<T>(cur, xo + 2, yo - 1);
-    T g = tex2D<T>(cur, xo + 3, yo - 1);
+    T a = tex2D<T>(cur, xo - 3, yo - 1); // [-3,-1]
+    T b = tex2D<T>(cur, xo - 2, yo - 1); // [-2,-1]
+    T c = tex2D<T>(cur, xo - 1, yo - 1); // [-1,-1]
+    T d = tex2D<T>(cur, xo - 0, yo - 1); // [-0,-1]
+    T e = tex2D<T>(cur, xo + 1, yo - 1); // [+1,-1]
+    T f = tex2D<T>(cur, xo + 2, yo - 1); // [+2,-1]
+    T g = tex2D<T>(cur, xo + 3, yo - 1); // [+3,-1]
 
     T h = tex2D<T>(cur, xo - 3, yo + 1);
     T i = tex2D<T>(cur, xo - 2, yo + 1);
@@ -128,16 +128,20 @@ __inline__ __device__ void yadif_single(T *dst,
     cudaTextureObject_t next1 = is_second_field ? next : cur;
     cudaTextureObject_t next2 = next;
 
-    T A = tex2D<T>(prev2, xo,  yo - 1);
-    T B = tex2D<T>(prev2, xo,  yo + 1);
-    T C = tex2D<T>(prev1, xo,  yo - 2);
-    T D = tex2D<T>(prev1, xo,  yo + 0);
-    T E = tex2D<T>(prev1, xo,  yo + 2);
-    T F = tex2D<T>(cur,   xo,  yo - 1);
+    T A = tex2D<T>(prev2, xo,  yo - 1); // [0,-1]
+    T B = tex2D<T>(prev2, xo,  yo + 1); // [0,+1]
+
+    T C = tex2D<T>(prev1, xo,  yo - 2); // [0,-2]
+    T D = tex2D<T>(prev1, xo,  yo + 0); // [0,0]
+    T E = tex2D<T>(prev1, xo,  yo + 2); // 
+
+    T F = tex2D<T>(cur,   xo,  yo - 1); 
     T G = tex2D<T>(cur,   xo,  yo + 1);
+
     T H = tex2D<T>(next1, xo,  yo - 2);
     T I = tex2D<T>(next1, xo,  yo + 0);
     T J = tex2D<T>(next1, xo,  yo + 2);
+
     T K = tex2D<T>(next2, xo,  yo - 1);
     T L = tex2D<T>(next2, xo,  yo + 1);
 
@@ -147,18 +151,16 @@ __inline__ __device__ void yadif_single(T *dst,
     dst[yo*dst_pitch+xo] = spatial_pred;
 }
 
-
 __global__ void yadif_uchar(unsigned char *dst,
                             cudaTextureObject_t prev,
                             cudaTextureObject_t cur,
                             cudaTextureObject_t next,
                             int dst_width, int dst_height, int dst_pitch,
                             int src_width, int src_height,
-                            int parity, int tff, bool skip_spatial_check)
+                            int parity, int tff, bool skip_spatial_check=false)
 {
     yadif_single(dst, prev, cur, next,
                  dst_width, dst_height, dst_pitch,
                  src_width, src_height,
                  parity, tff, skip_spatial_check);
 }
-
