@@ -163,7 +163,6 @@ __inline__ __device__ void yadif_single(T *dst,
     dst[yo*dst_pitch+xo] = spatial_pred;
 }
 
-
 extern "C" {
 
 __global__ void yadif_uchar(unsigned char *dst,
