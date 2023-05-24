@@ -1,6 +1,7 @@
 /**
  * this file ported from FFMPEG
 */
+#include "yadif.h"
 
 template<typename T>
 __inline__ __device__ T spatial_predictor(T a, T b, T c, T d, T e, T f, T g,
@@ -182,13 +183,13 @@ __global__ void yadif_uchar(unsigned char *dst,
 // #define CUDA(x)				cudaCheckError((x), #x, __FILE__, __LINE__)
 
 
-cudaError_t yadif_cuda(     unsigned char *dst,
-                            unsigned char *prev,
-                            unsigned char *cur,
-                            unsigned char *next,    
-                            int dst_width, int dst_height, int dst_pitch,
-                            int src_width, int src_height,
-                            int parity, int tff, bool skip_spatial_check=false)
+cudaError_t Yadif::yadif_cuda(  unsigned char *dst,
+                                unsigned char *prev,
+                                unsigned char *cur,
+                                unsigned char *next,    
+                                int dst_width, int dst_height, int dst_pitch,
+                                int src_width, int src_height,
+                                int parity, int tff, bool skip_spatial_check)
 
 {
     const dim3 blockDim(BLOCKX, BLOCKY);
