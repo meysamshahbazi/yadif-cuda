@@ -26,7 +26,7 @@ public:
     ~Yadif();
     void filter(unsigned char* frame,unsigned char* out);
 
-    cudaError_t yadif_cuda(     unsigned char *dst,
+    cudaError_t yadif_cuda( unsigned char *dst,
                             unsigned char *prev,
                             unsigned char *cur,
                             unsigned char *next,    
