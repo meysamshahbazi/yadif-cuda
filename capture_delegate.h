@@ -53,7 +53,7 @@
 
 #include "Config.h"
 
-
+#include "yadif.h"
 
 
 
@@ -75,6 +75,7 @@ private:
 	BMDConfig* m_config;
 	IDeckLinkInput*	m_deckLinkInput{NULL};
 	bool quit{false};
+	Yadif *yadif;
 	
 
 };

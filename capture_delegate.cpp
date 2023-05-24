@@ -10,6 +10,7 @@ DeckLinkCaptureDelegate::DeckLinkCaptureDelegate(BMDConfig* m_config, IDeckLinkI
 	m_config(m_config),
 	m_deckLinkInput(m_deckLinkInput)
 {
+	yadif = new Yadif(1080,1920,1920);
 }
 
 
@@ -49,9 +50,9 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 				}
 			}
 
-			// printf("Frame received (#%lu) [%s] - %s - Size: %li bytes\n", m_frameCount,
-			// 	timecodeString != NULL ? timecodeString : "No timecode", "Valid Frame",
-			// 	videoFrame->GetRowBytes() * videoFrame->GetHeight());
+			printf("Frame received (#%lu) [%s] - %s - Size: %li bytes\n", m_frameCount,
+				timecodeString != NULL ? timecodeString : "No timecode", "Valid Frame",
+				videoFrame->GetRowBytes() * videoFrame->GetHeight());
 
 			// -------------OPEN CV FRAME DISPLAY-----------------------------
 			void* frameBytes;
@@ -59,14 +60,16 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 
 			unsigned char *yuyv = (unsigned char *)frameBytes;
 			unsigned char *y_channel = new unsigned char[1920*1080];
-			
+			unsigned char *y_channel_de = new unsigned char[1920*1080];
 			for (int i{0}; i <1920;i++) {
 				for (int j{0}; j <1080;j++) {
 					y_channel[i+1920*j] = (unsigned char)yuyv[1+2*i+1920*2*j];
 				}
 			}
 
-			cv::Mat im(videoFrame->GetHeight(), videoFrame->GetWidth(), CV_8UC1,y_channel);
+			
+			yadif->filter(y_channel,y_channel_de);
+			cv::Mat im(videoFrame->GetHeight(), videoFrame->GetWidth(), CV_8UC1,y_channel_de);
 			cv::Mat img_bgr;
 			cv::cvtColor(im,img_bgr,cv::COLOR_GRAY2BGR); //3840*2160
 			cv::resize(img_bgr,img_bgr,cv::Size(3840*3/4,2160*3/4));
