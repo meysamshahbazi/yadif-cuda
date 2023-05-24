@@ -36,43 +36,47 @@
 ** https://www.blackmagicdesign.com/desktopvideo_sdk under the EULA.
 ** 
 ** -LICENSE-END-
-*/ 
+*/
 
-#include "bmcapture.h"
+#ifndef __CAPTURE_DELEGATE_H__
+#define __CAPTURE_DELEGATE_H__
+
 #include "DeckLinkAPI.h"
-#include "capture_delegate.h"
 
-static pthread_mutex_t	g_sleepMutex;
-static pthread_cond_t	g_sleepCond;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <csignal>
 
-static bool				g_do_exit = false;
+#include "Config.h"
 
-static void sigfunc(int signum)
+
+
+
+
+class DeckLinkCaptureDelegate : public IDeckLinkInputCallback
 {
-	if (signum == SIGINT || signum == SIGTERM)
-		g_do_exit = true;
+public:
+	DeckLinkCaptureDelegate( BMDConfig* m_config, IDeckLinkInput* m_deckLinkInput );
 
-	pthread_cond_signal(&g_sleepCond);
-}
+	virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, LPVOID *ppv) { return E_NOINTERFACE; }
+	virtual ULONG STDMETHODCALLTYPE AddRef(void);
+	virtual ULONG STDMETHODCALLTYPE  Release(void);
+	virtual HRESULT STDMETHODCALLTYPE VideoInputFormatChanged(BMDVideoInputFormatChangedEvents, IDeckLinkDisplayMode*, BMDDetectedVideoInputFormatFlags);
+	virtual HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(IDeckLinkVideoInputFrame*, IDeckLinkAudioInputPacket*);
 
-int main(int argc, char *argv[])
-{
-	pthread_mutex_init(&g_sleepMutex, NULL);
-	pthread_cond_init(&g_sleepCond, NULL);
+private:
+	int32_t				m_refCount;
+	BMDPixelFormat		m_pixelFormat;
+	unsigned long	m_frameCount{0};
+	BMDConfig* m_config;
+	IDeckLinkInput*	m_deckLinkInput{NULL};
+	bool quit{false};
+	
 
-	signal(SIGINT, sigfunc);
-	signal(SIGTERM, sigfunc);
-	signal(SIGHUP, sigfunc);
+};
 
-	BMCapture bmc;
-	bmc.run();
-	while (!g_do_exit)
-	{
-		pthread_mutex_lock(&g_sleepMutex);
-		pthread_cond_wait(&g_sleepCond, &g_sleepMutex);
-		pthread_mutex_unlock(&g_sleepMutex);
-	}
-	printf("exit from program...\n");	
-
-	return 1;
-}
+#endif

@@ -36,43 +36,47 @@
 ** https://www.blackmagicdesign.com/desktopvideo_sdk under the EULA.
 ** 
 ** -LICENSE-END-
-*/ 
+*/
 
-#include "bmcapture.h"
+#ifndef BMD_CONFIG_H
+#define BMD_CONFIG_H
+
 #include "DeckLinkAPI.h"
-#include "capture_delegate.h"
 
-static pthread_mutex_t	g_sleepMutex;
-static pthread_cond_t	g_sleepCond;
 
-static bool				g_do_exit = false;
-
-static void sigfunc(int signum)
+class BMDConfig
 {
-	if (signum == SIGINT || signum == SIGTERM)
-		g_do_exit = true;
+public:
+	BMDConfig();
+	virtual ~BMDConfig();
 
-	pthread_cond_signal(&g_sleepCond);
-}
+	bool ParseArguments(int argc,  char** argv);
+	void DisplayUsage(int status);
+	void DisplayConfiguration();
 
-int main(int argc, char *argv[])
-{
-	pthread_mutex_init(&g_sleepMutex, NULL);
-	pthread_cond_init(&g_sleepCond, NULL);
+	int						m_deckLinkIndex;
+	int						m_displayModeIndex;
 
-	signal(SIGINT, sigfunc);
-	signal(SIGTERM, sigfunc);
-	signal(SIGHUP, sigfunc);
+	int						m_audioChannels;
+	int						m_audioSampleDepth;
 
-	BMCapture bmc;
-	bmc.run();
-	while (!g_do_exit)
-	{
-		pthread_mutex_lock(&g_sleepMutex);
-		pthread_cond_wait(&g_sleepCond, &g_sleepMutex);
-		pthread_mutex_unlock(&g_sleepMutex);
-	}
-	printf("exit from program...\n");	
+	int						m_maxFrames;
 
-	return 1;
-}
+	BMDVideoInputFlags		m_inputFlags;
+	BMDPixelFormat			m_pixelFormat;
+	BMDTimecodeFormat		m_timecodeFormat;
+
+	const char*				m_videoOutputFile;
+	const char*				m_audioOutputFile;
+
+	IDeckLink* GetSelectedDeckLink(void);
+	IDeckLinkDisplayMode* GetSelectedDeckLinkDisplayMode(IDeckLink* deckLink);
+
+private:
+	char*					m_deckLinkName;
+	char*					m_displayModeName;
+
+	static const char* GetPixelFormatName(BMDPixelFormat pixelFormat);
+};
+
+#endif

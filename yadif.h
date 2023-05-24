@@ -5,14 +5,6 @@
 #include <cuda_runtime_api.h>
 #include "device_launch_parameters.h"
 
-cudaError_t yadif_cuda(     unsigned char *dst,
-                            unsigned char *prev,
-                            unsigned char *cur,
-                            unsigned char *next,    
-                            int dst_width, int dst_height, int dst_pitch,
-                            int src_width, int src_height,
-                            int parity, int tff, bool skip_spatial_check=false);
-
 
 enum Parity_t {
         PARITY_TFF  =  0, ///< top field first
