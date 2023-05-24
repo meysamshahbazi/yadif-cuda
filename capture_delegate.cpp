@@ -50,9 +50,9 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 				}
 			}
 
-			printf("Frame received (#%lu) [%s] - %s - Size: %li bytes\n", m_frameCount,
-				timecodeString != NULL ? timecodeString : "No timecode", "Valid Frame",
-				videoFrame->GetRowBytes() * videoFrame->GetHeight());
+			// printf("Frame received (#%lu) [%s] - %s - Size: %li bytes\n", m_frameCount,
+			// 	timecodeString != NULL ? timecodeString : "No timecode", "Valid Frame",
+			// 	videoFrame->GetRowBytes() * videoFrame->GetHeight());
 
 			// -------------OPEN CV FRAME DISPLAY-----------------------------
 			void* frameBytes;

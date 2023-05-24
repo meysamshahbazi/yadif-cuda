@@ -1,5 +1,10 @@
 #include "yadif.h"
 
+
+#include <stdio.h>
+#include <stdlib.h>
+
+
 Yadif::Yadif(unsigned int im_height,unsigned  int im_width,unsigned int row_bytes)
     :im_height{im_height}, im_width{im_width}, row_bytes{row_bytes}
 {
@@ -22,11 +27,13 @@ void Yadif::filter(unsigned char* frame,unsigned char* out)
     cudaMemcpy(cur, next, im_height*row_bytes, cudaMemcpyDeviceToDevice);
     cudaMemcpy(next, frame, im_height*row_bytes, cudaMemcpyHostToDevice);
 
-    yadif_cuda( dst, prev, cur, next,
+    cudaError_t ret = yadif_cuda( dst, prev, cur, next,
                 im_width,im_height,im_width,// we assume the pitch is width!!!
                 im_width, im_height,
                 (int) parity,tff,false);
-            
+    if (ret != cudaSuccess)
+        printf("error in yadif_cuda: %d\n",ret);
+
     cudaMemcpy(out, dst, im_height*row_bytes, cudaMemcpyDeviceToHost);
 
 }
