@@ -181,8 +181,6 @@ __global__ void yadif_uchar(unsigned char *dst,
 #define BLOCKX 32
 #define BLOCKY 16
 
-// #define CUDA(x)				cudaCheckError((x), #x, __FILE__, __LINE__)
-
 
 cudaError_t Yadif::yadifCuda(  unsigned char *dst,
                                 unsigned char *prev,
@@ -195,7 +193,7 @@ cudaError_t Yadif::yadifCuda(  unsigned char *dst,
 {
     const dim3 blockDim(BLOCKX, BLOCKY);
 	const dim3 gridDim(DIV_UP(dst_width, blockDim.x), DIV_UP(dst_height, blockDim.y));
-    // printf("gridDim: %d,%d\n",gridDim.x,gridDim.y);
+
     yadif_uchar<<<gridDim,blockDim>>>(  dst, prev, cur, next,
                                         dst_width, dst_height, dst_pitch,
                                         src_width, src_height,

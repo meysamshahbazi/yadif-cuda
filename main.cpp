@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
 
 	BMCapture bmc;
 	bmc.run();
+	
 	while (!g_do_exit)
 	{
 		pthread_mutex_lock(&g_sleepMutex);

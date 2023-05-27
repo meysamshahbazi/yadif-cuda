@@ -73,7 +73,7 @@ BMCapture::BMCapture()
 	m_config.DisplayConfiguration();
 
 	// Configure the capture callback
-	delegate = new DeckLinkCaptureDelegate(&m_config,m_deckLinkInput);
+	delegate = new DeckLinkCaptureDelegate(&m_config, m_deckLinkInput);
 	m_deckLinkInput->SetCallback(delegate);
 
 }
@@ -120,9 +120,6 @@ void BMCapture::run()
     }
 
     result = m_deckLinkInput->StartStreams();
-    // if (result != S_OK)
-        // goto bail;
-
     // All Okay.
     exitStatus = 0;
 }
