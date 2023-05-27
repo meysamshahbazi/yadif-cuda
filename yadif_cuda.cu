@@ -198,6 +198,26 @@ cudaError_t Yadif::getYChannel(unsigned char *uyvy,unsigned char *y)
 }
 
 
+__global__ void cuda_get_uv_channel(unsigned char *uyvy,unsigned char *u_channel,unsigned char *v_channel,int width, int height)
+{
+    // Identify location
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    u_channel[x+width*y/2] = uyvy[4*x+width*2*y];
+    v_channel[x+width*y/2] = uyvy[2+4*x+width*2*y];
+}
+
+cudaError_t Yadif::getUVChannel(unsigned char *uyvy,unsigned char *u,unsigned char *v)
+{
+    const dim3 blockDim(BLOCKX, BLOCKY);
+	const dim3 gridDim(DIV_UP(m_im_width/2, blockDim.x), DIV_UP(m_im_height, blockDim.y));
+
+    cuda_get_uv_channel<<<gridDim,blockDim>>>(uyvy, u,v,m_im_width,m_im_height);
+    return cudaGetLastError();
+}
+
+
+
 __global__ void cuda_merge_uyvy(unsigned char *uyvy,unsigned char *y_channel, unsigned char *u_channel,unsigned char *v_channel,int width, int height)
 {
         // Identify location
@@ -215,23 +235,6 @@ cudaError_t Yadif::mergeUYVY(unsigned char* uyvy,unsigned char*y,unsigned char*u
     const dim3 blockDim(BLOCKX, BLOCKY);
 	const dim3 gridDim(DIV_UP(m_im_width/2, blockDim.x), DIV_UP(m_im_height, blockDim.y));
     cuda_merge_uyvy<<<gridDim,blockDim>>>(uyvy, y, u, v, m_im_width, m_im_height);
-    return cudaGetLastError();
-}
-__global__ void cuda_get_uv_channel(unsigned char *uyvy,unsigned char *u_channel,unsigned char *v_channel,int width, int height)
-{
-    // Identify location
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    u_channel[x+width*y/2] = uyvy[4*x+width*2*y];
-    v_channel[x+width*y/2] = uyvy[2+4*x+width*2*y];
-}
-
-cudaError_t Yadif::getUVChannel(unsigned char *uyvy,unsigned char *u,unsigned char *v)
-{
-    const dim3 blockDim(BLOCKX, BLOCKY);
-	const dim3 gridDim(DIV_UP(m_im_width/2, blockDim.x), DIV_UP(m_im_height, blockDim.y));
-
-    cuda_get_uv_channel<<<gridDim,blockDim>>>(uyvy, u,v,m_im_width,m_im_height);
     return cudaGetLastError();
 }
 

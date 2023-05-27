@@ -26,19 +26,17 @@ class Yadif{
 public:
     Yadif(unsigned int im_height, unsigned int im_width, unsigned int row_bytes);
     ~Yadif();
-    void filter_y(unsigned char* frame,unsigned char* out);
     void filter(unsigned char* frame,unsigned char* out);
+    void filter(unsigned char* frame);
 
+
+private:
     cudaError_t yadifCuda(  unsigned char *dst,
                             unsigned char *prev,
                             unsigned char *cur,
                             unsigned char *next,    
                             int dst_width, int dst_height, int dst_pitch,
                             int src_width, int src_height);
-
-
-
-private:
     cudaError_t getYChannel(unsigned char *uyvy,unsigned char *y);
     cudaError_t getUVChannel(unsigned char *uyvy,unsigned char *u,unsigned char *v);
     cudaError_t mergeUYVY(unsigned char* uyvy,unsigned char*y,unsigned char*u,unsigned char*v);

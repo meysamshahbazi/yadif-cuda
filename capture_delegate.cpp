@@ -11,6 +11,7 @@ DeckLinkCaptureDelegate::DeckLinkCaptureDelegate(BMDConfig* m_config, IDeckLinkI
 	m_deckLinkInput(m_deckLinkInput)
 {
 	yadif = new Yadif(1080,1920,1920*2);
+	
 }
 
 
@@ -93,10 +94,12 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 			// cv::imshow("frame",img_bgr);
 			// cv::waitKey(1);
 
-
 			// 
-			yadif->filter(yuyv,yuv_de);
-			cv::Mat im(videoFrame->GetHeight(), videoFrame->GetWidth(), CV_8UC2,yuv_de);
+			// yadif->filter(yuyv,yuv_de);
+			// cv::Mat im(videoFrame->GetHeight(), videoFrame->GetWidth(), CV_8UC2,yuv_de);
+			// yadif->filter(yuyv,yuyv);
+			yadif->filter(yuyv);
+			cv::Mat im(videoFrame->GetHeight(), videoFrame->GetWidth(), CV_8UC2,yuyv);
 			cv::Mat img_bgr;
 			cv::cvtColor(im,img_bgr,cv::COLOR_YUV2BGR_UYVY); //3840*2160
 			// cv::resize(img_bgr,img_bgr,cv::Size(3840*3/4,2160*3/4));
@@ -104,7 +107,7 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 			cv::imshow("frame",img_bgr);
 			cv::waitKey(1);			
 
-
+			delete[] yuv_de;
 
 			// deinterlace y channel onlu
 			// yadif->filter(yuyv,y_channel_de);

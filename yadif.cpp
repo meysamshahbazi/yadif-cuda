@@ -54,27 +54,6 @@ Yadif::~Yadif()
     cudaFree(m_dst_v);
 }
 
-/**
- * @brief this function filter only one channel image such as grat depreceted !
- * 
- * @param frame 
- * @param out 
- */
-void Yadif::filter_y(unsigned char* frame,unsigned char* out)
-{
-    // cudaMemcpy(m_prev, m_cur, m_im_height*m_row_bytes, cudaMemcpyDeviceToDevice);
-    // cudaMemcpy(m_cur, m_next, m_im_height*m_row_bytes, cudaMemcpyDeviceToDevice);
-    // cudaMemcpy(m_next, frame, m_im_height*m_row_bytes, cudaMemcpyHostToDevice);
-
-    // cudaError_t ret = yadifCuda( m_dst, m_prev, m_cur, m_next,
-    //             m_im_width,m_im_height,m_im_width, //we assume the pitch is width!!!
-    //             m_im_width, m_im_height);
-    
-    // if (ret != cudaSuccess)
-    //     printf("error in yadif_cuda: %d\n",ret);
-
-    // cudaMemcpy(out, m_dst, m_im_height*m_row_bytes, cudaMemcpyDeviceToHost);
-}
 
 /**
  * @brief in this function the input fomat is in bmdFormat8BitYUV : ‘UYVY’ 4:2:2 Representation
@@ -119,4 +98,9 @@ void Yadif::filter(unsigned char* frame,unsigned char* out)
         printf("error in mergeUYVY: %d\n",ret);
 
     cudaMemcpy(out, m_dst, m_im_height*m_im_width*2, cudaMemcpyDeviceToHost);
+}
+
+void Yadif::filter(unsigned char* frame)
+{
+    filter(frame,frame);
 }
