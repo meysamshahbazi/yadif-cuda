@@ -10,7 +10,7 @@ DeckLinkCaptureDelegate::DeckLinkCaptureDelegate(BMDConfig* m_config, IDeckLinkI
 	m_config(m_config),
 	m_deckLinkInput(m_deckLinkInput)
 {
-	yadif = new Yadif(1080,1920,1920);
+	yadif = new Yadif(576,720,720);
 }
 
 
@@ -50,29 +50,35 @@ HRESULT DeckLinkCaptureDelegate::VideoInputFrameArrived(IDeckLinkVideoInputFrame
 				}
 			}
 
-			// printf("Frame received (#%lu) [%s] - %s - Size: %li bytes\n", m_frameCount,
+			// printf("Frame received (#%lu) [%s] - %s - Size: %li bytes,\n", m_frameCount,
 			// 	timecodeString != NULL ? timecodeString : "No timecode", "Valid Frame",
 			// 	videoFrame->GetRowBytes() * videoFrame->GetHeight());
+
+			printf("%li,%li\n",videoFrame->GetRowBytes(),videoFrame->GetHeight());
 
 			// -------------OPEN CV FRAME DISPLAY-----------------------------
 			void* frameBytes;
 			videoFrame->GetBytes(&frameBytes);
-
+			// int width = 720;
+			// int hight = 576;
 			unsigned char *yuyv = (unsigned char *)frameBytes;
-			unsigned char *y_channel = new unsigned char[1920*1080];
-			unsigned char *y_channel_de = new unsigned char[1920*1080];
-			for (int i{0}; i <1920;i++) {
-				for (int j{0}; j <1080;j++) {
-					y_channel[i+1920*j] = (unsigned char)yuyv[1+2*i+1920*2*j];
+			unsigned char *y_channel = new unsigned char[videoFrame->GetWidth()*videoFrame->GetHeight()];
+			unsigned char *y_channel_de = new unsigned char[videoFrame->GetWidth()*videoFrame->GetHeight()];
+			for (int i{0}; i <videoFrame->GetWidth();i++) {
+				for (int j{0}; j <videoFrame->GetHeight();j++) {
+					y_channel[i+videoFrame->GetWidth()*j] = (unsigned char)yuyv[1+2*i+videoFrame->GetWidth()*2*j];
 				}
 			}
 
+
 			
 			yadif->filter(y_channel,y_channel_de);
+			
 			cv::Mat im(videoFrame->GetHeight(), videoFrame->GetWidth(), CV_8UC1,y_channel_de);
 			cv::Mat img_bgr;
 			cv::cvtColor(im,img_bgr,cv::COLOR_GRAY2BGR); //3840*2160
-			cv::resize(img_bgr,img_bgr,cv::Size(3840*3/4,2160*3/4));
+			// cv::resize(img_bgr,img_bgr,cv::Size(3840*3/4,2160*3/4));
+			cv::resize(img_bgr,img_bgr,cv::Size(1920,1080));
 			cv::imshow("frame",img_bgr);
 			cv::waitKey(1);
 

@@ -2,9 +2,10 @@
  * this file ported from FFMPEG
 */
 #include "yadif.h"
+#include "stdio.h"
 
 template<typename T>
-__inline__ __device__ T spatial_predictor(T a, T b, T c, T d, T e, T f, T g,
+inline __device__ T spatial_predictor(T a, T b, T c, T d, T e, T f, T g,
                                           T h, T i, T j, T k, T l, T m, T n)
 {
     int spatial_pred = (d + k)/2;
@@ -33,20 +34,20 @@ __inline__ __device__ T spatial_predictor(T a, T b, T c, T d, T e, T f, T g,
     return spatial_pred;
 }
 
-__inline__ __device__ int max3(int a, int b, int c)
+inline __device__ int max3(int a, int b, int c)
 {
     int x = max(a, b);
     return max(x, c);
 }
 
-__inline__ __device__ int min3(int a, int b, int c)
+inline __device__ int min3(int a, int b, int c)
 {
     int x = min(a, b);
     return min(x, c);
 }
 
 template<typename T>
-__inline__ __device__ T temporal_predictor(T A, T B, T C, T D, T E, T F,
+inline __device__ T temporal_predictor(T A, T B, T C, T D, T E, T F,
                                            T G, T H, T I, T J, T K, T L,
                                            T spatial_pred, bool skip_check)
 {
@@ -81,13 +82,13 @@ __inline__ __device__ T temporal_predictor(T A, T B, T C, T D, T E, T F,
 
 
 
-__inline__ __device__  int getIndex(int x, int y, int pitch)
+inline __device__  int getIndex(int x, int y, int pitch)
 {
     return y*pitch+x;
 }
 
 template<typename T>
-__inline__ __device__ void yadif_single(T *dst,
+inline __device__ void yadif_single(T *dst,
                                         T *prev,
                                         T *cur,
                                         T *next,
@@ -183,7 +184,7 @@ __global__ void yadif_uchar(unsigned char *dst,
 // #define CUDA(x)				cudaCheckError((x), #x, __FILE__, __LINE__)
 
 
-cudaError_t Yadif::yadif_cuda(  unsigned char *dst,
+cudaError_t Yadif::yadifCuda(  unsigned char *dst,
                                 unsigned char *prev,
                                 unsigned char *cur,
                                 unsigned char *next,    
@@ -194,7 +195,7 @@ cudaError_t Yadif::yadif_cuda(  unsigned char *dst,
 {
     const dim3 blockDim(BLOCKX, BLOCKY);
 	const dim3 gridDim(DIV_UP(dst_width, blockDim.x), DIV_UP(dst_height, blockDim.y));
-
+    // printf("gridDim: %d,%d\n",gridDim.x,gridDim.y);
     yadif_uchar<<<gridDim,blockDim>>>(  dst, prev, cur, next,
                                         dst_width, dst_height, dst_pitch,
                                         src_width, src_height,

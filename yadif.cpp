@@ -1,39 +1,39 @@
 #include "yadif.h"
-
-
 #include <stdio.h>
 #include <stdlib.h>
 
 
 Yadif::Yadif(unsigned int im_height,unsigned  int im_width,unsigned int row_bytes)
-    :im_height{im_height}, im_width{im_width}, row_bytes{row_bytes}
+    :m_im_height{im_height},m_im_width{im_width}, m_row_bytes{row_bytes}
 {
-    parity = PARITY_TFF;
-    cudaMalloc((void **)&next, im_height*row_bytes);
-    cudaMalloc((void **)&prev, im_height*row_bytes);
-    cudaMalloc((void **)&cur, im_height*row_bytes);
-
-    cudaMalloc((void **)&dst, im_height*row_bytes);
+    m_parity = PARITY_TFF;
+    cudaMalloc((void **)&m_next, m_im_height*m_row_bytes);
+    cudaMalloc((void **)&m_prev, m_im_height*m_row_bytes);
+    cudaMalloc((void **)&m_cur, m_im_height*m_row_bytes);
+    cudaMalloc((void **)&m_dst, m_im_height*m_row_bytes);
 }
 
 Yadif::~Yadif()
 {
-
+    cudaFree(m_next);
+    cudaFree(m_prev);
+    cudaFree(m_cur);
+    cudaFree(m_dst);
 }
 
 void Yadif::filter(unsigned char* frame,unsigned char* out)
 {
-    cudaMemcpy(prev, cur, im_height*row_bytes, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(cur, next, im_height*row_bytes, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(next, frame, im_height*row_bytes, cudaMemcpyHostToDevice);
+    cudaMemcpy(m_prev, m_cur, m_im_height*m_row_bytes, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(m_cur, m_next, m_im_height*m_row_bytes, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(m_next, frame, m_im_height*m_row_bytes, cudaMemcpyHostToDevice);
 
-    cudaError_t ret = yadif_cuda( dst, prev, cur, next,
-                im_width,im_height,im_width,// we assume the pitch is width!!!
-                im_width, im_height,
-                (int) parity,tff,false);
+    cudaError_t ret = yadifCuda( m_dst, m_prev, m_cur, m_next,
+                m_im_width,m_im_height,m_im_width, //we assume the pitch is width!!!
+                m_im_width, m_im_height,
+                (int) m_parity,m_tff,false);
+    
     if (ret != cudaSuccess)
         printf("error in yadif_cuda: %d\n",ret);
 
-    cudaMemcpy(out, dst, im_height*row_bytes, cudaMemcpyDeviceToHost);
-
+    cudaMemcpy(out, m_dst, m_im_height*m_row_bytes, cudaMemcpyDeviceToHost);
 }
