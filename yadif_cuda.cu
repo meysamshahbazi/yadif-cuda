@@ -103,7 +103,6 @@ inline __device__ void yadif_single(T *dst,
     if (xo >= dst_width || yo >= dst_height) { // TODO: add condition for x-3 and so on 
         return;
     }
-
     // Don't modify the primary field
     if (yo % 2 == parity) {
       dst[yo*dst_pitch+xo] = cur[getIndex(xo , yo,dst_pitch)]; //tex2D<T>(cur, xo, yo);
@@ -161,6 +160,9 @@ inline __device__ void yadif_single(T *dst,
     dst[yo*dst_pitch+xo] = spatial_pred;
 }
 
+
+
+
 __global__ void yadif_uchar(unsigned char *dst,
                             unsigned char *prev,
                             unsigned char *cur,
@@ -176,19 +178,69 @@ __global__ void yadif_uchar(unsigned char *dst,
 }
 
 
-#define DIV_UP(a, b) ( ((a) + (b) - 1) / (b) )
-#define ALIGN_UP(a, b) (((a) + (b) - 1) & ~((b) - 1))
-#define BLOCKX 32
-#define BLOCKY 16
+__global__ void cuda_get_y_channel(unsigned char *uyvy,unsigned char *y_channel,int width, int height)
+{
+    // Identify location
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    y_channel[x + width*y] = uyvy[1+2*x+width*2*y];
+}
 
 
-cudaError_t Yadif::yadifCuda(  unsigned char *dst,
+
+cudaError_t Yadif::getYChannel(unsigned char *uyvy,unsigned char *y)
+{
+    const dim3 blockDim(BLOCKX, BLOCKY);
+	const dim3 gridDim(DIV_UP(m_im_width, blockDim.x), DIV_UP(m_im_height, blockDim.y));
+
+    cuda_get_y_channel<<<gridDim,blockDim>>>(uyvy, y,m_im_width,m_im_height);
+    return cudaGetLastError();
+}
+
+
+__global__ void cuda_merge_uyvy(unsigned char *uyvy,unsigned char *y_channel, unsigned char *u_channel,unsigned char *v_channel,int width, int height)
+{
+        // Identify location
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    uyvy[0+4*x+width*2*y] = u_channel[x+width/2*y];
+    uyvy[1+4*x+width*2*y] = y_channel[0+2*x + width*y];
+    uyvy[2+4*x+width*2*y] = v_channel[x+width/2*y];
+    uyvy[3+4*x+width*2*y] = y_channel[1+2*x + width*y];
+}
+
+cudaError_t Yadif::mergeUYVY(unsigned char* uyvy,unsigned char*y,unsigned char*u,unsigned char*v)
+{
+    const dim3 blockDim(BLOCKX, BLOCKY);
+	const dim3 gridDim(DIV_UP(m_im_width/2, blockDim.x), DIV_UP(m_im_height, blockDim.y));
+    cuda_merge_uyvy<<<gridDim,blockDim>>>(uyvy, y, u, v, m_im_width, m_im_height);
+    return cudaGetLastError();
+}
+__global__ void cuda_get_uv_channel(unsigned char *uyvy,unsigned char *u_channel,unsigned char *v_channel,int width, int height)
+{
+    // Identify location
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    u_channel[x+width*y/2] = uyvy[4*x+width*2*y];
+    v_channel[x+width*y/2] = uyvy[2+4*x+width*2*y];
+}
+
+cudaError_t Yadif::getUVChannel(unsigned char *uyvy,unsigned char *u,unsigned char *v)
+{
+    const dim3 blockDim(BLOCKX, BLOCKY);
+	const dim3 gridDim(DIV_UP(m_im_width/2, blockDim.x), DIV_UP(m_im_height, blockDim.y));
+
+    cuda_get_uv_channel<<<gridDim,blockDim>>>(uyvy, u,v,m_im_width,m_im_height);
+    return cudaGetLastError();
+}
+
+cudaError_t Yadif::yadifCuda(   unsigned char *dst,
                                 unsigned char *prev,
                                 unsigned char *cur,
                                 unsigned char *next,    
                                 int dst_width, int dst_height, int dst_pitch,
-                                int src_width, int src_height,
-                                int parity, int tff, bool skip_spatial_check)
+                                int src_width, int src_height)
 
 {
     const dim3 blockDim(BLOCKX, BLOCKY);
@@ -197,8 +249,34 @@ cudaError_t Yadif::yadifCuda(  unsigned char *dst,
     yadif_uchar<<<gridDim,blockDim>>>(  dst, prev, cur, next,
                                         dst_width, dst_height, dst_pitch,
                                         src_width, src_height,
-                                        parity, tff, skip_spatial_check);
+                                        (int)m_parity, m_tff,false);
 
     return cudaGetLastError();
 }
 
+
+cudaError_t Yadif::filterCuda()
+{
+    const dim3 blockDim(BLOCKX, BLOCKY);
+	const dim3 gridDim_y(DIV_UP(m_im_width, blockDim.x), DIV_UP(m_im_height, blockDim.y));
+    const dim3 gridDim_uv(DIV_UP(m_im_width/2, blockDim.x), DIV_UP(m_im_height, blockDim.y));
+
+    yadif_uchar<<<gridDim_y,blockDim>>>(  m_dst_y, m_prev_y, m_cur_y, m_next_y,
+                                            m_im_width, m_im_height, m_im_width,
+                                            m_im_width, m_im_height,
+                                            (int)m_parity, m_tff, false);
+
+    yadif_uchar<<<gridDim_uv,blockDim>>>(  m_dst_u, m_prev_u, m_cur_u, m_next_u,
+                                            m_im_width/2, m_im_height, m_im_width/2,
+                                            m_im_width/2, m_im_height,
+                                            (int)m_parity, m_tff, false);
+
+    yadif_uchar<<<gridDim_uv,blockDim>>>(  m_dst_v, m_prev_v, m_cur_v, m_next_v,
+                                            m_im_width/2, m_im_height, m_im_width/2,
+                                            m_im_width/2, m_im_height,
+                                            (int)m_parity, m_tff, false);
+    
+    
+    return cudaGetLastError();
+
+}
