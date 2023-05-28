@@ -14,8 +14,8 @@ enum Parity_t {
 
 #define DIV_UP(a, b) ( ((a) + (b) - 1) / (b) )
 #define ALIGN_UP(a, b) (((a) + (b) - 1) & ~((b) - 1))
-#define BLOCKX 32
-#define BLOCKY 16
+#define BLOCKX 32 // 32
+#define BLOCKY 8 // 16
 
 
 /**
@@ -29,7 +29,6 @@ public:
     void filter(unsigned char* frame,unsigned char* out);
     void filter(unsigned char* frame);
 
-
 private:
     cudaError_t yadifCuda(  unsigned char *dst,
                             unsigned char *prev,
@@ -40,6 +39,7 @@ private:
     cudaError_t getYChannel(unsigned char *uyvy,unsigned char *y);
     cudaError_t getUVChannel(unsigned char *uyvy,unsigned char *u,unsigned char *v);
     cudaError_t mergeUYVY(unsigned char* uyvy,unsigned char*y,unsigned char*u,unsigned char*v);
+    cudaError_t splitUYVY(unsigned char* uyvy,unsigned char*y,unsigned char*u,unsigned char*v);
     cudaError_t filterCuda(); 
     /// @brief: 1 for is TOP filed came first and 0 otherwise
     int m_tff{1}; // TODO: check this with APIs bmdUpperFieldFirst 

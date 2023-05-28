@@ -16,9 +16,9 @@ set(CUDA_SEPARABLE_COMPILATION ON)
 set(CUDA_PROPAGATE_HOST_FLAGS OFF)
 set(CUDA_HOST_COMPILER /usr/bin/g++)
 
-set(CUDA_NVCC_FLAGS
-    ${CUDA_NVCC_FLAGS};
-    -O3 -gencode arch=compute_86,code=sm_86)
+# set(CUDA_NVCC_FLAGS
+#     ${CUDA_NVCC_FLAGS};
+#     -O3 -gencode arch=compute_86,code=sm_86)
     # -O3 -gencode arch=compute_62,code=sm_62) for tegra
 
 # Add DeckLink API
@@ -59,3 +59,6 @@ target_link_libraries(${PROJECT_NAME}   ${CUDA_LIBRARIES}
                                         ${CMAKE_THREAD_LIBS_INIT}  
                                         ${PLATFORM_LIBRARIES}
                                         ${OpenCV_LIBS} )
+
+message(${CUDA_LIBRARIES} )
+message(${CUDA_INCLUDE_DIRS} )

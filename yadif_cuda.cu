@@ -224,10 +224,10 @@ __global__ void cuda_merge_uyvy(unsigned char *uyvy,unsigned char *y_channel, un
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    uyvy[0+4*x+width*2*y] = u_channel[x+width/2*y];
-    uyvy[1+4*x+width*2*y] = y_channel[0+2*x + width*y];
-    uyvy[2+4*x+width*2*y] = v_channel[x+width/2*y];
-    uyvy[3+4*x+width*2*y] = y_channel[1+2*x + width*y];
+    uyvy[ 0 + 4*x + width*2*y ] = u_channel[ x + width/2*y ];
+    uyvy[ 1 + 4*x + width*2*y ] = y_channel[ 0 + 2*x + width*y ];
+    uyvy[ 2 + 4*x + width*2*y ] = v_channel[ x + width/2*y ];
+    uyvy[ 3 + 4*x + width*2*y ] = y_channel[ 1 + 2*x + width*y ];
 }
 
 cudaError_t Yadif::mergeUYVY(unsigned char* uyvy,unsigned char*y,unsigned char*u,unsigned char*v)
@@ -237,6 +237,30 @@ cudaError_t Yadif::mergeUYVY(unsigned char* uyvy,unsigned char*y,unsigned char*u
     cuda_merge_uyvy<<<gridDim,blockDim>>>(uyvy, y, u, v, m_im_width, m_im_height);
     return cudaGetLastError();
 }
+
+
+
+__global__ void cuda_spilit_uyvy(unsigned char *uyvy,unsigned char *y_channel, unsigned char *u_channel,unsigned char *v_channel,int width, int height)
+{
+        // Identify location
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    u_channel[ x + width/2*y ]      = uyvy[ 0 + 4*x + width*2*y ];
+    y_channel[ 0 + 2*x + width*y]   = uyvy[ 1 + 4*x + width*2*y ];
+    v_channel[ x + width/2*y ]      = uyvy[ 2 + 4*x + width*2*y ];
+    y_channel[ 1 + 2*x + width*y]   = uyvy[ 3 + 4*x + width*2*y ];
+}
+
+
+cudaError_t Yadif::splitUYVY(unsigned char* uyvy,unsigned char*y,unsigned char*u,unsigned char*v)
+{
+    const dim3 blockDim(BLOCKX, BLOCKY);
+	const dim3 gridDim(DIV_UP(m_im_width/2, blockDim.x), DIV_UP(m_im_height, blockDim.y));
+    cuda_spilit_uyvy<<<gridDim,blockDim>>>(uyvy, y, u, v, m_im_width, m_im_height);
+    return cudaGetLastError();
+}
+
 
 cudaError_t Yadif::yadifCuda(   unsigned char *dst,
                                 unsigned char *prev,

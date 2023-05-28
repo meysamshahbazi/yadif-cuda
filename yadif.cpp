@@ -64,36 +64,32 @@ Yadif::~Yadif()
  */
 void Yadif::filter(unsigned char* frame,unsigned char* out)
 {
-
-    cudaMemcpy(m_frame_d, frame, m_im_height*m_row_bytes, cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(m_frame_d, frame, m_im_height*m_row_bytes, cudaMemcpyHostToDevice);
     cudaError_t ret;
-    ret = getYChannel(m_frame_d, m_frame_y);
-    if (ret != cudaSuccess)
-        printf("error in getYChannel: %d\n",ret);
 
-    ret = getUVChannel(m_frame_d, m_frame_u, m_frame_v);
+    ret = splitUYVY(m_frame_d,m_frame_y,m_frame_u,m_frame_v);
     if (ret != cudaSuccess)
         printf("error in getUVChannel: %d\n",ret);
 
-    cudaMemcpy(m_prev_y, m_cur_y, m_im_height*m_im_width, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(m_cur_y, m_next_y, m_im_height*m_im_width, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(m_next_y, m_frame_y, m_im_height*m_im_width, cudaMemcpyDeviceToDevice);
+    cudaMemcpyAsync(m_prev_y, m_cur_y, m_im_height*m_im_width, cudaMemcpyDeviceToDevice);
+    cudaMemcpyAsync(m_cur_y, m_next_y, m_im_height*m_im_width, cudaMemcpyDeviceToDevice);
+    cudaMemcpyAsync(m_next_y, m_frame_y, m_im_height*m_im_width, cudaMemcpyDeviceToDevice);
 
-    cudaMemcpy(m_prev_u, m_cur_u, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(m_cur_u, m_next_u, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(m_next_u, m_frame_u, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
+    cudaMemcpyAsync(m_prev_u, m_cur_u, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
+    cudaMemcpyAsync(m_cur_u, m_next_u, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
+    cudaMemcpyAsync(m_next_u, m_frame_u, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
 
-    cudaMemcpy(m_prev_v, m_cur_v, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(m_cur_v, m_next_v, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(m_next_v, m_frame_v, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
+    cudaMemcpyAsync(m_prev_v, m_cur_v, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
+    cudaMemcpyAsync(m_cur_v, m_next_v, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
+    cudaMemcpyAsync(m_next_v, m_frame_v, m_im_height*m_im_width/2, cudaMemcpyDeviceToDevice);
 
-    
     ret = filterCuda();
+
     if (ret != cudaSuccess)
         printf("error in filterCuda: %d\n",ret);
 
     ret = mergeUYVY(m_dst,m_dst_y,m_dst_u,m_dst_v);
-    
+    // ret = mergeUYVY(m_dst,m_frame_y,m_frame_u, m_frame_v);
      if (ret != cudaSuccess)
         printf("error in mergeUYVY: %d\n",ret);
 
