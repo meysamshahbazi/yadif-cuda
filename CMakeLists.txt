@@ -5,7 +5,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}" ${CMAKE_MODULE_PATH})
 
 project(yadif)
 
-set(DECKLINK_SDK_INCLUDE_DIR /home/meysam/BlackMagic/Blackmagic_DeckLink_SDK_12.4.2/Linux/include)
+# set(DECKLINK_SDK_INCLUDE_DIR /home/meysam/BlackMagic/Blackmagic_DeckLink_SDK_12.4.2/Linux/include)
+set(DECKLINK_SDK_INCLUDE_DIR /home/meysam/BlackMagic/Blackmagic_DeckLink_SDK_14.2/Linux/include/)
 
 
 find_package(Threads)
@@ -26,6 +27,7 @@ SET(PLATFORM_SOURCES
 ${DECKLINK_SDK_INCLUDE_DIR}/DeckLinkAPI.h
 ${DECKLINK_SDK_INCLUDE_DIR}/DeckLinkAPIDispatch.cpp
 )
+
 LIST(APPEND PLATFORM_LIBRARIES dl pthread)
 
 SET(APP_HEADERS
@@ -45,9 +47,9 @@ SET(APP_SOURCES
 
 
 
-SET(GCC_COVERAGE_COMPILE_FLAGS "-std=c++14 -Wunused-function")
+SET(GCC_COVERAGE_COMPILE_FLAGS "-std=c++14 -Wunused-function -fPIC")
 SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
-
+cuda_add_library(yadif_cuda SHARED yadif_cuda.cu)
 # TARGETS --------------------------------------------------------------------------------------------------------------
 cuda_add_executable(${PROJECT_NAME} main.cpp yadif.cpp yadif_cuda.cu ${APP_SOURCES} ${PLATFORM_SOURCES} )
 # set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_ARCHITECTURES "86")
@@ -55,10 +57,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC   ${CUDA_INCLUDE_DIRS}
                                                     ${DECKLINK_SDK_INCLUDE_DIR}
                                                     ${OpenCV_INCLUDE_DIRS}  )
 
+
+
 target_link_libraries(${PROJECT_NAME}   ${CUDA_LIBRARIES} 
                                         ${CMAKE_THREAD_LIBS_INIT}  
                                         ${PLATFORM_LIBRARIES}
                                         ${OpenCV_LIBS} )
+
 
 message(${CUDA_LIBRARIES} )
 message(${CUDA_INCLUDE_DIRS} )
